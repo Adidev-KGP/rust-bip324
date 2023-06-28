@@ -1,0 +1,66 @@
+on:
+  push:
+    branches:
+      - fschacha20
+
+name: Continuous integration
+
+jobs:
+  Stable:
+    name: Build and Linter Check
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout Crate
+        uses: actions/checkout@v3
+      - name: Install Nightly Toolchain
+        run: rustup toolchain install nightly
+      - name: Checkout Toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install Clippy
+        run: rustup component add clippy
+      - name: Install Rustfmt
+        run: rustup component add rustfmt
+      - name: Copy clippy.toml
+        run: cp clippy.toml $HOME/.cargo/
+      - name: Copy rustfmt.toml
+        run: cp rustfmt.toml $HOME/.cargo/
+      - name: Checkout Toolchain
+        run: rustup toolchain install 1.48.0
+      - name: Build and Run Clippy
+        run: cargo clippy -- -D warnings
+      - name: Build and Format Code
+        run: cargo fmt -- --check
+      - name: Build
+        run: cargo build --all --verbose
+      - name: Build with Nightly
+        run: cargo +nightly build --all --verbose
+      - name : Running test
+        run : cargo test
+
+  Nightly:
+    name: Test - nightly toolchain
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout Crate
+        uses: actions/checkout@v3
+      - name: Checkout Toolchain
+        uses: dtolnay/rust-toolchain@nightly
+      - name : Running test
+        run : cargo test
+
+  # MSRV:
+  #   name: Test - 1.48.0 toolchain
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     fail-fast: false
+  #   steps:
+  #     - name: Checkout Crate
+  #       uses: actions/checkout@v3
+  #     - name: Checkout Toolchain
+  #       uses: dtolnay/rust-toolchain@1.48.0
+  #     - name : Running test
+  #       run : cargo test
